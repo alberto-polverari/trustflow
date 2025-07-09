@@ -2,6 +2,8 @@ package it.trustflow.document.service;
 
 import it.trustflow.document.entity.*;
 import it.trustflow.document.repository.*;
+import it.trustflow.document.security.dto.AuthenticatedUser;
+import it.trustflow.document.util.UserUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,8 @@ import java.util.Optional;
 public class WorkflowService {
 
     @Autowired
+    private UserUtils userUtils;
+    @Autowired
     private WorkflowDefinitionRepository definitionRepo;
     @Autowired
     private WorkflowStepRepository stepRepo;
@@ -25,16 +29,17 @@ public class WorkflowService {
     private DocumentRepository documentRepo;
 
     @Transactional
-    public WorkflowInstance startWorkflow(Long documentId, Long tenantId) {
-        WorkflowDefinition definition = definitionRepo.findByTenantId(tenantId)
+    public WorkflowInstance startWorkflow(Long documentId) {
+        AuthenticatedUser user = userUtils.getAuthenticatedUser();
+        WorkflowDefinition definition = definitionRepo.findByTenantId(user.getTenantId())
                 .orElseThrow(() -> new RuntimeException("Configurazione workflow non trovata per il tenant"));
 
         List<WorkflowStep> steps = stepRepo.findByWorkflowDefinitionOrderByStepOrderAsc(definition);
         Document document = documentRepo.findById(documentId)
                 .orElseThrow(() -> new RuntimeException("Documento non trovato"));
         WorkflowInstance instance = WorkflowInstance.builder()
-                .document(document)
-                .tenantId(tenantId)
+                .documentId(document.getId())
+                .tenantId(user.getTenantId())
                 .workflowDefinition(definition)
                 .status("IN_CORSO")
                 .startedAt(LocalDateTime.now())
@@ -61,11 +66,13 @@ public class WorkflowService {
     }
 
     @Transactional
-    public void approve(Long instanceId, String approverId, String comment, boolean accepted) {
+    public void approve(Long instanceId, String comment, boolean accepted) {
+        AuthenticatedUser user = userUtils.getAuthenticatedUser();
+
         WorkflowInstance instance = instanceRepo.findById(instanceId)
                 .orElseThrow(() -> new RuntimeException("Istanza non trovata"));
 
-        Approval approval = approvalRepo.findByWorkflowInstanceIdAndApproverId(instanceId, approverId)
+        Approval approval = approvalRepo.findByWorkflowInstanceIdAndApproverId(instanceId, user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Approvazione non trovata"));
 
         if (!approval.getStatus().equals("IN_ATTESA")) {
@@ -113,7 +120,7 @@ public class WorkflowService {
             instanceRepo.save(instance);
 
             // recupero il documento associato all'istanza e aggiorno lo stato
-            Optional<Document> document = documentRepo.findById(instance.getDocument().getId());
+            Optional<Document> document = documentRepo.findById(instance.getDocumentId());
             if (document.isPresent()) {
                 Document doc = document.get();
                 doc.setStatus("REVISIONE_UTENTE");
@@ -132,7 +139,7 @@ public class WorkflowService {
             instanceRepo.save(instance);
 
             // recupero il documento associato all'istanza e aggiorno lo stato
-            Optional<Document> document = documentRepo.findById(instance.getDocument().getId());
+            Optional<Document> document = documentRepo.findById(instance.getDocumentId());
             if (document.isPresent()) {
                 Document doc = document.get();
                 doc.setStatus("APPROVATO");

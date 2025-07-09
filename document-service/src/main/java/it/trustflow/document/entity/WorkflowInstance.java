@@ -19,9 +19,9 @@ public class WorkflowInstance implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JoinColumn(name = "document_id")
-    private Document document;
-
+//    @JoinColumn(name = "document_id")
+//    private Document document;
+    private Long documentId;
     private Long tenantId;
 
     @ManyToOne
