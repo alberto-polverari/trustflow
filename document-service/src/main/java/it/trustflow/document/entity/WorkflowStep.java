@@ -18,7 +18,7 @@ public class WorkflowStep implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long approverId;
+    private String approverId;
     private int stepOrder;
 
     @ManyToOne

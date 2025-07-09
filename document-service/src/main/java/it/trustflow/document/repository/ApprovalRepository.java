@@ -10,5 +10,5 @@ public interface ApprovalRepository extends JpaRepository<Approval, Long> {
 
     List<Approval> findByWorkflowInstanceId(Long workflowInstanceId);
 
-    Optional<Approval> findByWorkflowInstanceIdAndApproverId(Long workflowInstanceId, Long approverId);
+    Optional<Approval> findByWorkflowInstanceIdAndApproverId(Long workflowInstanceId, String approverId);
 }

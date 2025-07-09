@@ -20,7 +20,7 @@ public class Approval implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long approverId;
+    private String approverId;
     private String status; // IN_ATTESA, APPROVATO, RIFIUTATO
     private String comment;
     private LocalDateTime approvedAt;

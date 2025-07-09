@@ -61,7 +61,7 @@ public class WorkflowService {
     }
 
     @Transactional
-    public void approve(Long instanceId, Long approverId, String comment, boolean accepted) {
+    public void approve(Long instanceId, String approverId, String comment, boolean accepted) {
         WorkflowInstance instance = instanceRepo.findById(instanceId)
                 .orElseThrow(() -> new RuntimeException("Istanza non trovata"));
 

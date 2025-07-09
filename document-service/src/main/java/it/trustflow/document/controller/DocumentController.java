@@ -21,12 +21,17 @@ public class DocumentController {
     private DocumentService documentService;
 
     @PostMapping("/upload")
-    public ResponseEntity<Document> upload(@RequestParam("file") MultipartFile file,
-                                           @RequestParam("ownerId") Long ownerId,
-                                           @RequestParam("tenantId") Long tenantId) throws IOException {
-        Document doc = documentService.upload(file, ownerId, tenantId);
+    public ResponseEntity<Document> upload(@RequestParam("file") MultipartFile file) {
+        Document doc = documentService.upload(file);
         return ResponseEntity.ok(doc);
     }
+
+    @PostMapping("/uploadMockFile")
+    public ResponseEntity<Document> uploadMock(@RequestParam("filename") String filename) {
+        Document doc = documentService.uploadMock(filename);
+        return ResponseEntity.ok(doc);
+    }
+
 
     @GetMapping("/{id}/download")
     public ResponseEntity<FileSystemResource> download(@PathVariable Long id) {

@@ -23,7 +23,7 @@ public class Document implements Serializable {
     private String contentType;
 
     @Column(nullable = false)
-    private Long ownerId;
+    private String ownerId;
 
     @Column(nullable = false)
     private Long tenantId;
