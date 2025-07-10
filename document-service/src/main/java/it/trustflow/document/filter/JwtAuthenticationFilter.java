@@ -6,6 +6,7 @@ import it.trustflow.document.util.JwtUtil;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -44,7 +45,8 @@ public class JwtAuthenticationFilter implements Filter {
                     null,
                     userDetails.getAuthorities()
                 );
-//                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                MDC.put("tenantId", String.valueOf(claims.get("tenantId")));
+                MDC.put("username", claims.getSubject());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }

@@ -22,11 +22,11 @@ public class WorkflowController {
 
     @PutMapping("/approva")
     public ResponseEntity<String> approva(
-        @RequestParam("documentId") Long documentId,
-        @RequestParam("comment") String user,
+        @RequestParam("instanceId") Long instanceId,
+        @RequestParam("comment") String comment,
         @RequestParam("approved") boolean approved
     ) {
-        workflowService.approve(documentId, user, approved);
+        workflowService.approve(instanceId, comment, approved);
         return ResponseEntity.ok("Approvazione completata con successo");
     }
 
