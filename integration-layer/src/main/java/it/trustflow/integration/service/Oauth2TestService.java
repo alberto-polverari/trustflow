@@ -39,10 +39,10 @@ public class Oauth2TestService {
             HttpEntity<Void> authRequest = new HttpEntity<>(authHeaders);
 
             ResponseEntity<String> response = restTemplate.exchange(
-            "http://localhost:9000/api/protected",
-            HttpMethod.GET,
-            authRequest,
-            String.class
+            "http://localhost:9000/api/external-services",
+                HttpMethod.GET,
+                authRequest,
+                String.class
             );
 
             return response.getBody(); // Deve restituire "Accesso autorizzato ✅"
