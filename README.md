@@ -32,8 +32,6 @@ Elaborato tecnico sistema TrustFlow
 
 ---
 
-## ▶️ Come eseguire localmente
+## ▶️ Database Postgres e Mongo
 
-1. Avvia il database con Docker:
-   ```bash
-   docker-compose up -d
+- Avviati localmente su wsl con docker (docker-compose.yml)
