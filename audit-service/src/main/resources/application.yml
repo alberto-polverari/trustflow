@@ -4,11 +4,9 @@ server:
 spring:
   application:
     name: audit-service
-#  datasource:
-#    url: jdbc:postgresql://localhost:5432/documentdb
-#    username: postgres
-#    password: postgres
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+    mongodb:
+      uri: mongodb://localhost:27017/auditdb
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#    show-sql: true
