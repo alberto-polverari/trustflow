@@ -31,6 +31,8 @@ public class WorkflowService {
     private ApprovalRepository approvalRepo;
     @Autowired
     private DocumentRepository documentRepo;
+    @Autowired
+    private IntegrationService integrationService;
 
     @Transactional
     public WorkflowInstance startWorkflow(Long documentId) {
@@ -167,7 +169,11 @@ public class WorkflowService {
             documentRepo.save(doc);
 
             // firma digitale
+            LOGGER.info("Invoco servizio di firma digitale per {}", doc.getFilename());
+            integrationService.firmaDocumento(doc.getFilename());
             // conservazione su sistema esterno
+            LOGGER.info("Invoco servizio di invio documento per {}", doc.getFilename());
+            integrationService.invioDocumento(doc.getFilename());
         }
     }
 }

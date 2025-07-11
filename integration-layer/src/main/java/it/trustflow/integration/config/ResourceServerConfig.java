@@ -19,34 +19,23 @@ public class ResourceServerConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
+        // Configura Authorization Server integrato
+        OAuth2AuthorizationServerConfigurer authorizationConfigurer =
             new OAuth2AuthorizationServerConfigurer();
 
-        RequestMatcher endpointsMatcher = authorizationServerConfigurer
-            .getEndpointsMatcher();
+        RequestMatcher authEndpoints = authorizationConfigurer.getEndpointsMatcher();
 
         http
-        .securityMatcher(endpointsMatcher) // matcha solo /oauth2/*
-//        .securityMatcher("/api/**")
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/test/**").permitAll()
-            .anyRequest().authenticated()
+            .requestMatchers(authEndpoints).permitAll()      // ✅ endpoint /oauth2/* liberi
+            .anyRequest().authenticated()                    // 🔐 tutto il resto protetto
         )
-        .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
-        .with(authorizationServerConfigurer, config -> {}); // ✅ nuovo approccio
-
-        // chain secondaria per le API
-//        http
-//        .securityMatcher("/api/**")
-//        .authorizeHttpRequests(auth -> auth
-//            .requestMatchers("/api/test/**").permitAll()
-//            .anyRequest().authenticated()
-//        );
-//        .oauth2ResourceServer(oauth2 -> oauth2
-//            .jwt(Customizer.withDefaults())
-//        );
+        .csrf(csrf -> csrf.ignoringRequestMatchers(authEndpoints))
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt())        // ✅ JWT obbligatorio
+        .with(authorizationConfigurer, config -> {});
 
         return http.build();
+
     }
 
     @Bean

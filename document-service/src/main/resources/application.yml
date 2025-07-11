@@ -11,5 +11,9 @@ spring:
       ddl-auto: update
     show-sql: true
 
-file:
-  upload-dir: ./uploaded-documents
+integration:
+  client-id: "demo-client"
+  client-secret: "secret"
+  oauth-token-url: "http://localhost:9000/oauth2/token"
+  firma-digitale: "http://localhost:9000/api/external-services/firma-digitale"
+  invio-documento: "http://localhost:9000/api/external-services/invio-documento"
