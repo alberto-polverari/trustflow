@@ -7,6 +7,8 @@ import it.trustflow.auth.entity.Utente;
 import it.trustflow.auth.repository.UserRepository;
 import it.trustflow.auth.security.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +18,8 @@ import java.util.Optional;
 
 @Service
 public class AuthService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthService.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -27,10 +31,17 @@ public class AuthService {
     private AuditLogService auditLogService;
 
     public AuthResponse login(AuthRequest authRequest, HttpServletRequest request) {
-        Utente utente = userRepository.findByUsername(authRequest.getUsername())
-            .orElseThrow(() -> new AccessDeniedException("User not found"));
+        Utente utente = null;
+        Optional<Utente> utenteOptional = userRepository.findByUsername(authRequest.getUsername());
+
+        if (utenteOptional.isEmpty()) {
+            LOGGER.warn("Invalid credentials for user: {}", authRequest.getUsername());
+            throw new AccessDeniedException("Invalid credentials");
+        }
+        utente = utenteOptional.get();
 
         if (!passwordEncoder.matches(authRequest.getPassword(), utente.getPassword())) {
+            LOGGER.warn("Invalid credentials for user: {}", authRequest.getUsername());
             throw new AccessDeniedException("Invalid credentials");
         }
 
@@ -43,7 +54,7 @@ public class AuthService {
             .userId(utente.getId().toString())
             .build();
         auditLogService.sendAuditLog(log, request);
-
+        LOGGER.info("User {} logged in successfully", utente.getUsername());
         return new AuthResponse(token);
     }
 
@@ -51,7 +62,8 @@ public class AuthService {
         Optional<Utente> utenteOpt = userRepository.findByCodiceFiscale(codiceFiscale);
 
         if (utenteOpt.isEmpty()) {
-            throw new  AccessDeniedException("User not found");
+            LOGGER.warn("User not found for codice fiscale: {}", codiceFiscale);
+            throw new AccessDeniedException("User not found");
         }
 
         Utente utente = utenteOpt.get();
@@ -65,6 +77,7 @@ public class AuthService {
             .userId(utente.getId().toString())
             .build();
         auditLogService.sendAuditLog(log, request);
+        LOGGER.info("User {} logged in via SPID with codice fiscale {}", utente.getUsername(), codiceFiscale);
 
         return token;
     }
