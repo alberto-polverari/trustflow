@@ -18,7 +18,7 @@ public class AuthenticatedUser implements UserDetails {
     private String role;
     private List<GrantedAuthority> roles;
 
-    public AuthenticatedUser(String role, Long tenantId, String username) {
+    public AuthenticatedUser( String username, Long tenantId, String role) {
         this.role = role;
         this.tenantId = tenantId;
         this.username = username;

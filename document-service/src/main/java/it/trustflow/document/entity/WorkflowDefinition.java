@@ -1,6 +1,5 @@
 package it.trustflow.document.entity;
 
-import it.trustflow.document.enums.WorkflowType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

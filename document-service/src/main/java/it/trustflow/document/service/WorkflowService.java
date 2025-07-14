@@ -2,6 +2,11 @@ package it.trustflow.document.service;
 
 import it.trustflow.document.dto.AuditLog;
 import it.trustflow.document.entity.*;
+import it.trustflow.document.enums.ApprovalStatusEnum;
+import it.trustflow.document.enums.DocumentStatusEnum;
+import it.trustflow.document.enums.WorkflowStatusEnum;
+import it.trustflow.document.enums.WorkflowTypeEnum;
+import it.trustflow.document.exception.WorkflowException;
 import it.trustflow.document.repository.*;
 import it.trustflow.document.security.dto.AuthenticatedUser;
 import it.trustflow.document.util.UserUtils;
@@ -43,18 +48,33 @@ public class WorkflowService {
         LOGGER.info("Starting workflow for document: {}", documentId);
         AuthenticatedUser user = userUtils.getAuthenticatedUser();
         WorkflowDefinition definition = definitionRepo.findByTenantId(user.getTenantId())
-                .orElseThrow(() -> new RuntimeException("Configurazione workflow non trovata per il tenant"));
+                .orElseThrow(() -> new WorkflowException("Configurazione workflow non trovata per il tenant"));
 
         LOGGER.info("Workflow definition type : {}", definition.getType());
         List<WorkflowStep> steps = stepRepo.findByWorkflowDefinitionOrderByStepOrderAsc(definition);
-        Document document = documentRepo.findById(documentId)
-                .orElseThrow(() -> new RuntimeException("Documento non trovato"));
+
+        Optional<Document> docOpt = documentRepo.findByIdAndTenantId(documentId, user.getTenantId());
+        if (docOpt.isEmpty()) {
+            LOGGER.error("Document with ID {} not found for tenant {}", documentId, user.getTenantId());
+            throw new WorkflowException("Documento non trovato");
+        }
+        Document document = docOpt.get();
         LOGGER.info("Document '{}' found", document.getFilename());
+
+        // Controllo che il documento non sia già in un workflow
+        if (
+            document.getStatus().equals(DocumentStatusEnum.IN_REVISIONE.name()) ||
+            document.getStatus().equals(DocumentStatusEnum.APPROVATO.name())
+        ) {
+            LOGGER.error("Documento {} già in revisione o approvato", documentId);
+            throw new WorkflowException("Documento già in revisione o approvato");
+        }
+
         WorkflowInstance instance = WorkflowInstance.builder()
                 .documentId(document.getId())
                 .tenantId(user.getTenantId())
                 .workflowDefinition(definition)
-                .status("IN_CORSO")
+                .status(WorkflowStatusEnum.IN_ATTESA.name())
                 .startedAt(LocalDateTime.now())
                 .build();
         instanceRepo.save(instance);
@@ -64,7 +84,7 @@ public class WorkflowService {
             Approval approval = Approval.builder()
                     .workflowInstance(instance)
                     .approverId(step.getApproverId())
-                    .status("IN_ATTESA")
+                    .status(ApprovalStatusEnum.IN_ATTESA.name())
                     .stepOrder(step.getStepOrder())
                     .build();
             approvalRepo.save(approval);
@@ -73,7 +93,7 @@ public class WorkflowService {
 
         // Aggiorno lo stato del documento associato all'istanza mettendolo in stato IN_REVISIONE
 
-        document.setStatus("IN_REVISIONE");
+        document.setStatus(DocumentStatusEnum.IN_REVISIONE.name());
         document.setDataModifica(LocalDateTime.now());
         documentRepo.save(document);
 
@@ -91,46 +111,53 @@ public class WorkflowService {
     }
 
     @Transactional
-    public void approve(Long instanceId, String comment, boolean accepted, HttpServletRequest request) {
+    public void approve(Long documentId, String comment, boolean accepted, HttpServletRequest request) {
         AuthenticatedUser user = userUtils.getAuthenticatedUser();
 
-        LOGGER.info("Retrieving instance {}", instanceId);
-        WorkflowInstance instance = instanceRepo.findById(instanceId)
-                .orElseThrow(() -> new RuntimeException("Istanza non trovata"));
+        LOGGER.info("Retrieving instance by document id {}", documentId);
+        Optional<WorkflowInstance> instanceOpt = instanceRepo.findByDocumentIdAndTenantId(documentId, user.getTenantId());
 
-        Optional<Document> document = documentRepo.findById(instance.getDocumentId());
-        if (!document.isPresent()) {
+        if (instanceOpt.isEmpty()) {
+            LOGGER.error("Workflow instance not found for document {} and tenant {}", documentId, user.getTenantId());
+            throw new WorkflowException("Istanza di workflow non trovata per il documento " + documentId);
+        }
+
+        WorkflowInstance instance = instanceOpt.get();
+        Long instanceId = instance.getId();
+
+        Optional<Document> document = documentRepo.findByIdAndTenantId(instance.getDocumentId(), user.getTenantId());
+        if (document.isEmpty()) {
             LOGGER.error("Documento associato all'istanza {} non trovato", instanceId);
-            throw new RuntimeException("Documento associato all'istanza non trovato");
+            throw new WorkflowException("Documento associato all'istanza non trovato");
         }
 
         LOGGER.info("Retrieving approval status for {}", user.getUsername());
         Approval approval = approvalRepo.findByWorkflowInstanceIdAndApproverId(instanceId, user.getUsername())
-                .orElseThrow(() -> new RuntimeException("Approvazione non trovata"));
+                .orElseThrow(() -> new WorkflowException("Approvazione non trovata"));
 
-        if (!approval.getStatus().equals("IN_ATTESA")) {
+        if (!approval.getStatus().equals(ApprovalStatusEnum.IN_ATTESA.name())) {
             LOGGER.error("Approvazione istanza {} già espressa", instanceId);
-            throw new RuntimeException("Approvazione già espressa");
+            throw new WorkflowException("Approvazione già espressa");
         }
 
-        if (instance.getWorkflowDefinition().getType().equals("SEQUENZIALE")) {
+        if (instance.getWorkflowDefinition().getType().equals(WorkflowTypeEnum.SEQUENZIALE.name())) {
             LOGGER.info("Workflow type is SEQUENZIALE, checking step order for approver {}", user.getUsername());
             // Controllo che l'approvatore sia il prossimo nella sequenza
             List<Approval> approvals = approvalRepo.findByWorkflowInstanceId(instanceId);
 
             int nextStepOrder = approvals.stream()
-                    .filter(a -> a.getStatus().equals("IN_ATTESA"))
+                    .filter(a -> a.getStatus().equals(ApprovalStatusEnum.IN_ATTESA.name()))
                     .mapToInt(Approval::getStepOrder)
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Nessun passo in attesa trovato"));
+                    .orElseThrow(() -> new WorkflowException("Nessun passo in attesa trovato"));
 
             if (approval.getStepOrder() != nextStepOrder) {
                 LOGGER.error("Non è il turno dell'approvatore {} per questa istanza", user.getUsername());
-                throw new RuntimeException("Non è il turno dell'approvatore per questa istanza");
+                throw new WorkflowException("Non è il turno dell'approvatore per questa istanza");
             }
         }
 
-        approval.setStatus(accepted ? "APPROVATO" : "RIFIUTATO");
+        approval.setStatus(accepted ? ApprovalStatusEnum.APPROVATO.name() : ApprovalStatusEnum.RIFIUTATO.name());
         approval.setComment(comment);
         approval.setApprovedAt(LocalDateTime.now());
         LOGGER.info("Approving instance {} for user {} with status {}", instanceId, user.getUsername(), approval.getStatus());
@@ -138,21 +165,21 @@ public class WorkflowService {
 
         List<Approval> allApprovals = approvalRepo.findByWorkflowInstanceId(instanceId);
         LOGGER.info("Checking all approvals for instance {}", instanceId);
-        boolean allApproved = allApprovals.stream().allMatch(a -> a.getStatus().equals("APPROVATO"));
+        boolean allApproved = allApprovals.stream().allMatch(a -> a.getStatus().equals(ApprovalStatusEnum.APPROVATO.name()));
         // controllo che siano state date tutte le approvazioni (nessuna in attesa) e che ci sia almeno un rifiuto
-        boolean anyRejected = allApprovals.stream().noneMatch(a -> a.getStatus().equals("IN_ATTESA"))
-            && allApprovals.stream().anyMatch(a -> a.getStatus().equals("RIFIUTATO"));
+        boolean anyRejected = allApprovals.stream().noneMatch(a -> a.getStatus().equals(ApprovalStatusEnum.IN_ATTESA.name()))
+            && allApprovals.stream().anyMatch(a -> a.getStatus().equals(ApprovalStatusEnum.RIFIUTATO.name()));
 
         // l'istanza di workflow e il documento passano in stato REVISIONE_UTENTE se c'è almeno un rifiuto
         if (anyRejected) {
             LOGGER.info("Workflow instance {} has at least one rejection, setting status to REVISIONE_UTENTE", instanceId);
-            instance.setStatus("RIFIUTATO");
+            instance.setStatus(WorkflowStatusEnum.RIFIUTATO.name());
             instance.setCompletedAt(LocalDateTime.now());
             instanceRepo.save(instance);
 
             // aggiorno lo stato del documento associato all'istanza
             Document doc = document.get();
-            doc.setStatus("REVISIONE_UTENTE");
+            doc.setStatus(DocumentStatusEnum.REVISIONE_UTENTE.name());
             doc.setDataModifica(LocalDateTime.now());
             LOGGER.info("Updating document status to REVISIONE_UTENTE for instance {}", instanceId);
             documentRepo.save(doc);
@@ -162,13 +189,13 @@ public class WorkflowService {
 
         if (allApproved) {
             LOGGER.info("All approvals for instance {} have been granted", instanceId);
-            instance.setStatus("APPROVATO");
+            instance.setStatus(WorkflowStatusEnum.APPROVATO.name());
             instance.setCompletedAt(LocalDateTime.now());
             instanceRepo.save(instance);
 
             // recupero il documento associato all'istanza e aggiorno lo stato
             Document doc = document.get();
-            doc.setStatus("APPROVATO");
+            doc.setStatus(DocumentStatusEnum.APPROVATO.name());
             doc.setDataModifica(LocalDateTime.now());
             LOGGER.info("Updating document status to APPROVATO for instance {}", instanceId);
             documentRepo.save(doc);
