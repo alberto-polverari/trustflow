@@ -13,9 +13,8 @@ public class AuditService {
     private AuditLogRepository auditLogRepository;
 
     public String log(Audit audit, HttpServletRequest request) {
-        String ip = getClientIp(request);
         AuditLog log = new AuditLog();
-        log.setIp(ip);
+        log.setIp(audit.getIp());
         log.setUserId(audit.getUserId());
         log.setTenantId(audit.getTenantId());
         log.setEventType(audit.getEventType());
@@ -23,20 +22,5 @@ public class AuditService {
         log.setEventMessage(audit.getEventMessage());
         auditLogRepository.save(log);
         return "Audit log saved successfully";
-    }
-
-    public String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-            // se ci sono più IP, prendi il primo (l’originale)
-            return ip.split(",")[0].trim();
-        }
-
-        ip = request.getHeader("X-Real-IP");
-        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-            return ip;
-        }
-
-        return request.getRemoteAddr(); // fallback
     }
 }

@@ -1,9 +1,11 @@
 package it.trustflow.document.service;
 
+import it.trustflow.document.dto.AuditLog;
 import it.trustflow.document.entity.*;
 import it.trustflow.document.repository.*;
 import it.trustflow.document.security.dto.AuthenticatedUser;
 import it.trustflow.document.util.UserUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,9 +35,11 @@ public class WorkflowService {
     private DocumentRepository documentRepo;
     @Autowired
     private IntegrationService integrationService;
+    @Autowired
+    private AuditLogService auditLogService;
 
     @Transactional
-    public WorkflowInstance startWorkflow(Long documentId) {
+    public WorkflowInstance startWorkflow(Long documentId, HttpServletRequest request) {
         LOGGER.info("Starting workflow for document: {}", documentId);
         AuthenticatedUser user = userUtils.getAuthenticatedUser();
         WorkflowDefinition definition = definitionRepo.findByTenantId(user.getTenantId())
@@ -74,11 +78,20 @@ public class WorkflowService {
         documentRepo.save(document);
 
         LOGGER.info("Document status updated to {}", document.getStatus());
+        AuditLog log = AuditLog.builder()
+            .tenantId(user.getTenantId().toString())
+            .eventType("WORKFLOW_START")
+            .eventDescription("Inizio del processo di approvazione del documento")
+            .eventMessage("User " + user.getUsername() + " started document validation: {}" + documentId)
+            .userId(user.getUsername())
+            .build();
+        auditLogService.sendAuditLog(log, request);
+
         return instance;
     }
 
     @Transactional
-    public void approve(Long instanceId, String comment, boolean accepted) {
+    public void approve(Long instanceId, String comment, boolean accepted, HttpServletRequest request) {
         AuthenticatedUser user = userUtils.getAuthenticatedUser();
 
         LOGGER.info("Retrieving instance {}", instanceId);
@@ -122,14 +135,6 @@ public class WorkflowService {
         approval.setApprovedAt(LocalDateTime.now());
         LOGGER.info("Approving instance {} for user {} with status {}", instanceId, user.getUsername(), approval.getStatus());
         approvalRepo.save(approval);
-//
-//        if (!accepted) {
-//            LOGGER.info("Approval for instance {} rejected by {}", instanceId, user.getUsername());
-//            instance.setStatus("RIFIUTATO");
-//            instance.setCompletedAt(LocalDateTime.now());
-//            instanceRepo.save(instance);
-//            return;
-//        }
 
         List<Approval> allApprovals = approvalRepo.findByWorkflowInstanceId(instanceId);
         LOGGER.info("Checking all approvals for instance {}", instanceId);
@@ -170,10 +175,27 @@ public class WorkflowService {
 
             // firma digitale
             LOGGER.info("Invoco servizio di firma digitale per {}", doc.getFilename());
-            integrationService.firmaDocumento(doc.getFilename());
+            String signedDoc = integrationService.firmaDocumento(doc.getFilename());
+            AuditLog log = AuditLog.builder()
+                .tenantId(user.getTenantId().toString())
+                .eventType("FIRMA_DOCUMENTO")
+                .eventDescription("Chiamata al servizio di firma digitale")
+                .eventMessage("User " + user.getUsername() + " signed document: {}" + doc.getId())
+                .userId(user.getUsername())
+                .build();
+            auditLogService.sendAuditLog(log, request);
+
             // conservazione su sistema esterno
             LOGGER.info("Invoco servizio di invio documento per {}", doc.getFilename());
-            integrationService.invioDocumento(doc.getFilename());
+            integrationService.invioDocumento(signedDoc);
+            log = AuditLog.builder()
+                .tenantId(user.getTenantId().toString())
+                .eventType("CONSERVAZIONE_DOCUMENTO")
+                .eventDescription("Chiamata al servizio di conservazione del documento")
+                .eventMessage("User " + user.getUsername() + " saved signed document: {}" + doc.getId())
+                .userId(user.getUsername())
+                .build();
+            auditLogService.sendAuditLog(log, request);
         }
     }
 }

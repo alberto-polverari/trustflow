@@ -1,9 +1,11 @@
 package it.trustflow.document.service;
 
+import it.trustflow.document.dto.AuditLog;
 import it.trustflow.document.entity.Document;
 import it.trustflow.document.repository.DocumentRepository;
 import it.trustflow.document.security.dto.AuthenticatedUser;
 import it.trustflow.document.util.UserUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +24,12 @@ public class DocumentService {
     private UserUtils userUtils;
 
     @Autowired
+    private AuditLogService auditLogService;
+
+    @Autowired
     private DocumentRepository repository;
 
-    public Document upload(MultipartFile file) {
+    public Document upload(MultipartFile file, HttpServletRequest request) {
         LOGGER.info("Uploading document: {}", file.getOriginalFilename());
         AuthenticatedUser user = userUtils.getAuthenticatedUser();
         String originalFilename = file.getOriginalFilename();
@@ -39,10 +44,18 @@ public class DocumentService {
             .status("IN_ATTESA")
             .path("")
         .build();
+        AuditLog log = AuditLog.builder()
+            .tenantId(user.getTenantId().toString())
+            .eventType("UPLOAD_DOCUMENT")
+            .eventDescription("Upload del documento")
+            .eventMessage("User " + user.getUsername() + " uploaded document: {}" + newFilename)
+            .userId(user.getUsername().toString())
+            .build();
+        auditLogService.sendAuditLog(log, request);
         return repository.save(doc);
     }
 
-    public Document uploadMock(String fileName)  {
+    public Document uploadMock(String fileName, HttpServletRequest request)  {
         LOGGER.info("Uploading mock document: {}", fileName);
         AuthenticatedUser user = userUtils.getAuthenticatedUser();
         Document doc = Document.builder()
@@ -56,6 +69,14 @@ public class DocumentService {
             .path("")
         .build();
         LOGGER.info("Upload completed");
+        AuditLog log = AuditLog.builder()
+            .tenantId(user.getTenantId().toString())
+            .eventType("UPLOAD_DOCUMENT_MOCK")
+            .eventDescription("Upload del documento mock")
+            .eventMessage("User " + user.getUsername() + " uploaded mock document: {}" + fileName)
+            .userId(user.getUsername().toString())
+            .build();
+        auditLogService.sendAuditLog(log, request);
         return repository.save(doc);
     }
 

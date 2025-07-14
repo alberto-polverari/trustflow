@@ -2,6 +2,7 @@ package it.trustflow.document.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -34,6 +35,9 @@ public class IntegrationService {
 
     @Value("${integration.invio-documento}")
     private String invioDocumentoEndpoint;
+
+    @Autowired
+    private AuditLogService auditLogService;
 
     public String firmaDocumento(String document) {
         // Chiamo il, servizio di firma digitale

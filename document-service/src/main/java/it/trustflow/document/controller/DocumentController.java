@@ -2,6 +2,7 @@ package it.trustflow.document.controller;
 
 import it.trustflow.document.entity.Document;
 import it.trustflow.document.service.DocumentService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
@@ -21,14 +22,20 @@ public class DocumentController {
     private DocumentService documentService;
 
     @PostMapping("/upload")
-    public ResponseEntity<Document> upload(@RequestParam("file") MultipartFile file) {
-        Document doc = documentService.upload(file);
+    public ResponseEntity<Document> upload(
+        @RequestParam("file") MultipartFile file,
+        HttpServletRequest request
+    ) {
+        Document doc = documentService.upload(file, request);
         return ResponseEntity.ok(doc);
     }
 
     @PostMapping("/uploadMockFile")
-    public ResponseEntity<Document> uploadMock(@RequestParam("filename") String filename) {
-        Document doc = documentService.uploadMock(filename);
+    public ResponseEntity<Document> uploadMock(
+        @RequestParam("filename") String filename,
+        HttpServletRequest request
+    ) {
+        Document doc = documentService.uploadMock(filename, request);
         return ResponseEntity.ok(doc);
     }
 

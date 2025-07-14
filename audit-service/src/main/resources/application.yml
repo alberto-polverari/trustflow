@@ -6,7 +6,8 @@ spring:
     name: audit-service
     mongodb:
       uri: mongodb://localhost:27017/auditdb
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#    show-sql: true
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest

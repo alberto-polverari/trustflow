@@ -4,6 +4,7 @@ import it.trustflow.auth.dto.AuthRequest;
 import it.trustflow.auth.dto.AuthResponse;
 import it.trustflow.auth.entity.Utente;
 import it.trustflow.auth.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +23,11 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
-        return new ResponseEntity<AuthResponse>(authService.login(request), HttpStatus.OK);
+    public ResponseEntity<AuthResponse> login(
+        @RequestBody AuthRequest authRequest,
+        HttpServletRequest request
+    ) {
+        return new ResponseEntity<AuthResponse>(authService.login(authRequest, request), HttpStatus.OK);
     }
 
     @GetMapping("/spid-init")
@@ -32,8 +36,12 @@ public class AuthController {
     }
 
     @GetMapping("/spid-callback")
-    public void spidCallback(@RequestParam("cf") String codiceFiscale, HttpServletResponse response) throws IOException {
-        String token = authService.spidLogin(codiceFiscale);
+    public void spidCallback(
+        @RequestParam("cf") String codiceFiscale,
+        HttpServletRequest request,
+        HttpServletResponse response
+    ) throws IOException {
+        String token = authService.spidLogin(codiceFiscale, request);
         response.sendRedirect("http://localhost:4200/spid/callback?token=" + token);
     }
 }

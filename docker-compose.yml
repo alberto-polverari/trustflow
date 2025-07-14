@@ -19,6 +19,13 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: trustflow_rabbit
+    ports:
+    - "5672:5672"      # porta AMQP
+    - "15672:15672"    # interfaccia web
 
 volumes:
   pgdata:
