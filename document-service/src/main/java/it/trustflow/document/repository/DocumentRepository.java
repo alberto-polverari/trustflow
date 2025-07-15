@@ -8,7 +8,9 @@ import java.util.Optional;
 
 public interface DocumentRepository extends JpaRepository<Document, Long> {
 
-    List<Document> findByTenantId(Long tenantId);
+    Optional<Document> findByIdAndOwnerIdAndTenantId(Long id, String ownerId, Long tenantId);
+
+    List<Document> findByOwnerIdAndTenantId(String ownerId, Long tenantId);
 
     Optional<Document> findByIdAndTenantId(Long id, Long tenantId);
 }

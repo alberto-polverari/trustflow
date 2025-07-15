@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -29,6 +30,13 @@ public class DocumentService {
     @Autowired
     private DocumentRepository repository;
 
+    /**
+     * Uploads a document and logs the action.
+     *
+     * @param file the document file to upload
+     * @param request the HTTP request for logging
+     * @return the saved Document entity
+     */
     public Document upload(MultipartFile file, HttpServletRequest request) {
         LOGGER.info("Uploading document: {}", file.getOriginalFilename());
         AuthenticatedUser user = userUtils.getAuthenticatedUser();
@@ -55,6 +63,13 @@ public class DocumentService {
         return repository.save(doc);
     }
 
+    /**
+     * Uploads a mock document for testing purposes.
+     *
+     * @param fileName the name of the mock document
+     * @param request the HTTP request for logging
+     * @return the saved Document entity
+     */
     public Document uploadMock(String fileName, HttpServletRequest request)  {
         LOGGER.info("Uploading mock document: {}", fileName);
         AuthenticatedUser user = userUtils.getAuthenticatedUser();
@@ -80,14 +95,26 @@ public class DocumentService {
         return repository.save(doc);
     }
 
+    /**
+     * Finds a document by its ID, owner ID, and tenant ID.
+     *
+     * @param id the ID of the document
+     * @return an Optional containing the Document if found, or empty if not found
+     */
     public Optional<Document> findById(Long id) {
-        return repository.findById(id);
+        AuthenticatedUser user = userUtils.getAuthenticatedUser();
+        return repository.findByIdAndOwnerIdAndTenantId(id, user.getUsername(), user.getTenantId());
     }
 
-    public Document updateStatus(Long id, String status) {
-        Document doc = repository.findById(id).orElseThrow();
-        doc.setStatus(status);
-        LOGGER.info("Update document {} status: {}", doc.getFilename(), status);
-        return repository.save(doc);
+    /**
+     * Finds a document by its ID and tenant ID.
+     *
+     * @param id the ID of the document
+     * @return an Optional containing the Document if found, or empty if not found
+     */
+    public List<Document> findAllUserDocuments() {
+        AuthenticatedUser user = userUtils.getAuthenticatedUser();
+        return repository.findByOwnerIdAndTenantId(user.getUsername(), user.getTenantId());
     }
+
 }

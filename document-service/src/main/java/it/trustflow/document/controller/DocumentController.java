@@ -4,7 +4,6 @@ import it.trustflow.document.entity.Document;
 import it.trustflow.document.service.DocumentService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -13,13 +12,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-
 @RestController
-@RequestMapping("/api/documents")
+@RequestMapping("/api/document")
 public class DocumentController {
     @Autowired
     private DocumentService documentService;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Document> getDocument(@PathVariable Long id) {
+        Document doc = documentService.findById(id).orElseThrow();
+        return ResponseEntity.ok(doc);
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<Iterable<Document>> getAllDocuments() {
+        return ResponseEntity.ok(documentService.findAllUserDocuments());
+    }
 
     @PostMapping("/upload")
     public ResponseEntity<Document> upload(
@@ -52,11 +60,5 @@ public class DocumentController {
         return ResponseEntity.ok()
         .headers(headers)
         .body(resource);
-    }
-
-    @PutMapping("/{id}/status")
-    public ResponseEntity<Document> updateStatus(@PathVariable Long id, @RequestParam String status) {
-        Document updated = documentService.updateStatus(id, status);
-        return ResponseEntity.ok(updated);
     }
 }

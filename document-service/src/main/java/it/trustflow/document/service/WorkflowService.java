@@ -43,6 +43,37 @@ public class WorkflowService {
     @Autowired
     private AuditLogService auditLogService;
 
+    /**
+     * Recupera un'istanza di workflow per ID.
+     *
+     * @param instanceId ID dell'istanza di workflow
+     * @return Istanza di workflow
+     */
+    public WorkflowInstance getWorkflowInstance(Long instanceId) {
+        AuthenticatedUser user = userUtils.getAuthenticatedUser();
+        LOGGER.info("Retrieving workflow instance by ID: {}", instanceId);
+        return instanceRepo.findByIdAndTenantId(instanceId, user.getTenantId())
+                .orElseThrow(() -> new WorkflowException("Istanza di workflow non trovata per l'ID: " + instanceId));
+    }
+
+    /**
+     * Recupera tutte le istanze di workflow per il tenant dell'utente autenticato.
+     *
+     * @return Lista di istanze di workflow
+     */
+    public List<WorkflowInstance> getAllWorkflowInstances() {
+        AuthenticatedUser user = userUtils.getAuthenticatedUser();
+        LOGGER.info("Retrieving all workflow instances for tenant: {}", user.getTenantId());
+        return instanceRepo.findByTenantId(user.getTenantId());
+    }
+
+    /**
+     * Avvia un workflow per un documento specifico.
+     *
+     * @param documentId ID del documento
+     * @param request    HttpServletRequest per il logging
+     * @return Istanza di workflow creata
+     */
     @Transactional
     public WorkflowInstance startWorkflow(Long documentId, HttpServletRequest request) {
         LOGGER.info("Starting workflow for document: {}", documentId);
@@ -110,6 +141,14 @@ public class WorkflowService {
         return instance;
     }
 
+    /**
+     * Approva o rifiuta un'istanza di workflow.
+     *
+     * @param documentId ID del documento associato all'istanza
+     * @param comment    Commento dell'approvatore
+     * @param accepted   Indica se l'approvazione è accettata o rifiutata
+     * @param request    HttpServletRequest per il logging
+     */
     @Transactional
     public void approve(Long documentId, String comment, boolean accepted, HttpServletRequest request) {
         AuthenticatedUser user = userUtils.getAuthenticatedUser();
@@ -124,6 +163,15 @@ public class WorkflowService {
 
         WorkflowInstance instance = instanceOpt.get();
         Long instanceId = instance.getId();
+
+        // controllo che l'istanza sia in stato IN_ATTESA o IN_CORSO
+        if (
+            !instance.getStatus().equals(WorkflowStatusEnum.IN_ATTESA.name()) &&
+            !instance.getStatus().equals(WorkflowStatusEnum.IN_CORSO.name())
+        ) {
+            LOGGER.error("L'istanza di workflow {} non è in uno stato lavorabile", instanceId);
+            throw new WorkflowException("L'istanza di workflow non è in uno stato lavorabile");
+        }
 
         Optional<Document> document = documentRepo.findByIdAndTenantId(instance.getDocumentId(), user.getTenantId());
         if (document.isEmpty()) {
@@ -162,6 +210,14 @@ public class WorkflowService {
         approval.setApprovedAt(LocalDateTime.now());
         LOGGER.info("Approving instance {} for user {} with status {}", instanceId, user.getUsername(), approval.getStatus());
         approvalRepo.save(approval);
+
+        // metto l'istanza in corso
+        if (instance.getStatus().equals(WorkflowStatusEnum.IN_ATTESA.name())) {
+            instance.setStatus(WorkflowStatusEnum.IN_CORSO.name());
+            instance.setStartedAt(LocalDateTime.now());
+            LOGGER.info("Setting instance {} status to IN_CORSO", instanceId);
+            instanceRepo.save(instance);
+        }
 
         List<Approval> allApprovals = approvalRepo.findByWorkflowInstanceId(instanceId);
         LOGGER.info("Checking all approvals for instance {}", instanceId);
