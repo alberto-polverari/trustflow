@@ -1,9 +1,7 @@
 -- Creazione tabella tenant
 CREATE TABLE tenant (
     id SERIAL PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    tipo VARCHAR(100),
-    configurazione TEXT
+    nome VARCHAR(255) NOT NULL
 );
 
 -- Creazione tabella utente
