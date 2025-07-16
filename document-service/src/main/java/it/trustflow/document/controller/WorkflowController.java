@@ -1,5 +1,6 @@
 package it.trustflow.document.controller;
 
+import it.trustflow.document.dto.Approval;
 import it.trustflow.document.entity.WorkflowInstance;
 import it.trustflow.document.service.WorkflowService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,12 +44,10 @@ public class WorkflowController {
     @PutMapping("/approva")
     @PreAuthorize("hasAuthority('ROLE_APPROVER')")
     public ResponseEntity<String> approva(
-        @RequestParam("documentId") Long documentId,
-        @RequestParam("comment") String comment,
-        @RequestParam("approved") boolean approved,
+        @RequestBody Approval approval,
         HttpServletRequest request
     ) {
-        workflowService.approve(documentId, comment, approved, request);
+        workflowService.approve(approval.getDocumentId(), approval.getComment(), approval.isApproved(), request);
         return ResponseEntity.ok("Valutazione inviata con successo");
     }
 

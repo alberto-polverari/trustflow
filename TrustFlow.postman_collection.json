@@ -1,0 +1,262 @@
+{
+	"info": {
+		"_postman_id": "e14c46e1-e2d7-413c-b5f9-044e6e76226e",
+		"name": "TrustFlow",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32709774"
+	},
+	"item": [
+		{
+			"name": "Upload mock doc",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsInRlbmFudElkIjoxLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTIwNjkwOTEsImV4cCI6MTc1MjE1NTQ5MX0.xYtzVD7dAYHcdghVdHzEjAgZeumr16n-zj5c6Ux4s1A",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/api/documents/uploadMockFile?filename=test.pdf&ownerId=1&tenantId=1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"documents",
+						"uploadMockFile"
+					],
+					"query": [
+						{
+							"key": "filename",
+							"value": "test.pdf"
+						},
+						{
+							"key": "ownerId",
+							"value": "1"
+						},
+						{
+							"key": "tenantId",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "JWT Login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\":\"approverTenant2\",\r\n    \"password\":\"admin\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Start Workflow",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcHByb3ZlcjEiLCJyb2xlIjoiQVBQUk9WRVIiLCJ0ZW5hbnRJZCI6MiwiaWF0IjoxNzUyNjc2MTkyLCJleHAiOjE3NTI3NjI1OTJ9.J0P6sj9tSYYtkEjxH-gK-h4Bm0jlxCDZwyOyhJ2MFDs",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/api/workflow/startRevisione?documentId=4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"workflow",
+						"startRevisione"
+					],
+					"query": [
+						{
+							"key": "documentId",
+							"value": "4"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Approvazione utente su workflow",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcHByb3ZlclRlbmFudDIiLCJyb2xlIjoiQVBQUk9WRVIiLCJ0ZW5hbnRJZCI6MiwiaWF0IjoxNzUyNjc2NDkxLCJleHAiOjE3NTI3NjI4OTF9.j3ROOWK-ItbEfCAHD2uns_fno-61HER56-Gm54M81uc",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\t  \"documentId\": 4,\r\n\t\t  \"comment\": \"TUTTO OK\",\r\n\t\t  \"approved\": true\r\n\t\t}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/workflow/approva",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"workflow",
+						"approva"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "JWT Oauth2",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "secret",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "demo-client",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "demo-client",
+						"value": "secret",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:9000/oauth2/token",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9000",
+					"path": [
+						"oauth2",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Lista documenti utente",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1dGVudGUxIiwidGVuYW50SWQiOjEsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzUyNTc3MjczLCJleHAiOjE3NTI2NjM2NzN9.auT_sEABIGhaFKLIE9q2LdFSYkp56QQ526CcU6o5Jcw",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "demo-client",
+						"value": "secret",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"userId\":\"admin\",\r\n    \"tenantId\":\"1\",\r\n    \"eventType\":\"APPROVAL\",\r\n    \"eventDescription\":\"Approvazione del documento\",\r\n    \"eventMessage\":\"documento approvato\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/document/list",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"document",
+						"list"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -32,6 +32,51 @@ Elaborato tecnico sistema TrustFlow
 
 ---
 
-## ▶️ Database Postgres e Mongo
 
-- Avviati localmente su wsl con docker (docker-compose.yml)
+# ✅ Guida rapida – Test End-to-End della piattaforma TrustFlow
+
+Questa guida ti accompagna passo passo nell’utilizzo base della piattaforma:
+
+1. 🔐 Autenticazione utente con JWT  
+2. 📤 Caricamento documento  
+3. 🔁 Avvio workflow approvativo  
+4. ✅ Approvazione documento da parte di un approver  
+
+---
+
+## 🔧 Prerequisiti
+
+- Servizi avviati:
+  - `auth-service` → http://localhost:9000
+  - `document-service` → http://localhost:9001
+  - `audit-service` → http://localhost:9010
+- Database PostgreSQL e Mongo attivi (docker-compose.yml)
+- RabbitMQ attivo (docker-compose.yml)
+- Strumento per testing API: Postman o curl
+
+---
+
+## Esempio di test JWT
+
+ 1. Login user/pass:
+		POST http://localhost:8081/api/auth/login
+		Body:
+		{
+		  "username": "user1",
+		  "password": "admin"
+		}
+	L'api ritorna il token JWT da utilizzare per le altre chiamate.
+ 2. Upload documento:
+		POST http://localhost:8082/api/documents/uploadMock?filename={filename}
+	L'api inserisce un record di test nella tabella dei documenti e ne ritorna l'oggetto.
+ 3. Avvio workflow:
+		POST http://localhost:8082/api/workflow/startRevisione?documentId={documentId}
+ 4. Approvazione utente:
+		POST http://localhost:8082/api/workflow/approva?documentId={documentId}
+		Body:
+		{
+		  "documentId": Long,
+		  "comment": String,
+		  "approved": boolean
+		}
+	

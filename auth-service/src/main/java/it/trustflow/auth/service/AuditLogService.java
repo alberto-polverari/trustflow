@@ -40,7 +40,7 @@ public class AuditLogService {
             rabbitTemplate.send(AUDIT_QUEUE, message);
             LOGGER.info("Audit log sent successfully");
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Errore serializzazione AuditLog", e);
+            LOGGER.error("Error sending message to queue", e);
         }
     }
 
