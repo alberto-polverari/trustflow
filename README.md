@@ -1,4 +1,4 @@
-# TrustFlow - Piattaforma di gestione documentale e approvazione
+# TrustFlow
 
 Elaborato tecnico sistema TrustFlow
 
@@ -25,38 +25,26 @@ Elaborato tecnico sistema TrustFlow
 
 - **Spring Boot 3.x**
 - **Spring Security + OAuth2 Authorization Server**
-- **RestTemplate con JWT propagation**
-- **PostgreSQL via Docker (con Docker Compose)**
-- **Maven multi-servizio (moduli separati)**
-- **Log JSON compatibile ELK (Logstash Encoder)**
+- **PostgreSQL via Docker **
+- **MongoDB via Docker **
+- **RabbitMQ via Docker **
+- **Maven **
+- **Logback (JSON - Logstash Encoder)**
 
 ---
 
-
-# ✅ Guida rapida – Test End-to-End della piattaforma TrustFlow
-
-Questa guida ti accompagna passo passo nell’utilizzo base della piattaforma:
-
-1. 🔐 Autenticazione utente con JWT  
-2. 📤 Caricamento documento  
-3. 🔁 Avvio workflow approvativo  
-4. ✅ Approvazione documento da parte di un approver  
-
----
-
-## 🔧 Prerequisiti
+## 🔧 Test End-to-End locale
 
 - Servizi avviati:
-  - `auth-service` → http://localhost:9000
-  - `document-service` → http://localhost:9001
-  - `audit-service` → http://localhost:9010
+  - `auth-service` → http://localhost:8081
+  - `document-service` → http://localhost:8082
+  - `audit-service` → http://localhost:8083
+  - `integration-layer` → http://localhost:9000
 - Database PostgreSQL e Mongo attivi (docker-compose.yml)
 - RabbitMQ attivo (docker-compose.yml)
-- Strumento per testing API: Postman o curl
+- Strumento per testing API: Postman
 
 ---
-
-## Esempio di test JWT
 
  1. Login user/pass:
 		POST http://localhost:8081/api/auth/login
