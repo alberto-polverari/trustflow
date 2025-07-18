@@ -25,10 +25,10 @@ Elaborato tecnico sistema TrustFlow
 
 - **Spring Boot 3.x**
 - **Spring Security + OAuth2 Authorization Server**
-- **PostgreSQL via Docker **
-- **MongoDB via Docker **
-- **RabbitMQ via Docker **
-- **Maven **
+- **PostgreSQL**
+- **MongoDB**
+- **RabbitMQ**
+- **Maven**
 - **Logback (JSON - Logstash Encoder)**
 
 ---
