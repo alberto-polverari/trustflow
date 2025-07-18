@@ -2,7 +2,7 @@
 
 Elaborato tecnico sistema TrustFlow
 
-## 🧩 Struttura del progetto
+## Struttura del progetto
 
 | Microservizio        | Descrizione                                                                 |
 |----------------------|------------------------------------------------------------------------------|
@@ -13,7 +13,7 @@ Elaborato tecnico sistema TrustFlow
 
 ---
 
-## 🔐 Sicurezza
+## Sicurezza
 
 - **JWT**: utilizzato per autenticare l'accesso alle API protette (`document-service`)
 - **OAuth2 (Authorization Server)**: implementato localmente per `integration-layer` e accesso token-based
@@ -21,7 +21,7 @@ Elaborato tecnico sistema TrustFlow
 
 ---
 
-## 🚀 Tecnologie principali
+## Tecnologie principali
 
 - **Spring Boot 3.x**
 - **Spring Security + OAuth2 Authorization Server**
@@ -33,7 +33,7 @@ Elaborato tecnico sistema TrustFlow
 
 ---
 
-## 🔧 Test End-to-End locale
+## Test End-to-End locale
 
 - Servizi avviati:
   - `auth-service` → http://localhost:8081
